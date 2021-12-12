@@ -1,17 +1,26 @@
-{% if movies %}
-    <ul class="list-group col-4">
-        {% for movie in movies %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ movie.name }}
-                <span class="badge badge-danger badge-pill"
-                style="cursor: pointer;" 
-                hx-delete="{% url 'delete-movie' movie.pk %}"
-                hx-target="#movie-list"
-                hx-confirm="Are you sure you wish to delete?">X</span>
-            </li>
+<div class="d-flex justify-content-between">
+    <section class="col-6">
 
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>You do not have any movies in your list</p>
-{% endif %}
+        {% if movies %}
+            <ul class="list-group col-12">
+                {% for movie in movies %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{forloop.counter}} - {{ movie.name }}
+                        <span class="badge badge-danger badge-pill"
+                        style="cursor: pointer;" 
+                        hx-delete="{% url 'delete-movie' movie.pk %}"
+                        hx-target="#movie-list"
+                        hx-confirm="Are you sure you wish to delete?">X</span>
+                    </li>
+
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>You do not have any movies in your list</p>
+        {% endif %}
+
+    </section>
+    
+    <section> 
+        {% include 'partials/search.html' %}
+    </section>

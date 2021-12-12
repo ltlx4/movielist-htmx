@@ -5,7 +5,9 @@ from django.urls import reverse_lazy
 from django.views.generic import FormView, TemplateView
 from django.views.decorators.http import require_http_methods
 from django.views.generic.list import ListView
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, login
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import Movie
 from films.forms import RegisterForm
 
@@ -26,7 +28,7 @@ class RegisterView(FormView):
         return super().form_valid(form)
 
 
-class MovieList(ListView):
+class MovieList(LoginRequiredMixin, ListView):
     model = Movie
     template_name = 'movie.html'
     context_object_name = 'movies'
@@ -42,10 +44,15 @@ def check_username(request):
     else:
         return HttpResponse("<div id='username-error' class='success'>This username is available</div>")
 
+
+@login_required
 def add_movie(request):
     name = request.POST.get('moviename')
-    movie = Movie.objects.create(name=name)
-    
+    if name.isspace() or not name:
+        movies = request.user.movies.all()
+        return render(request, 'partials/movie_list.html', {'movies': movies})
+    movie = Movie.objects.get_or_create(name=name)[0]
+
     request.user.movies.add(movie)
 
     movies = request.user.movies.all()
@@ -53,9 +60,25 @@ def add_movie(request):
     return render(request, 'partials/movie_list.html', {'movies': movies})
 
 
+@login_required
 @require_http_methods(['DELETE'])
 def delete_movie(request, pk):
     request.user.movies.remove(pk)
     movies = request.user.movies.all()
     return render(request, 'partials/movie_list.html', {'movies': movies})
 
+
+def search_movie(request):
+    search_text = request.POST.get('search')
+    usermovies = request.user.movies.all()
+    
+    results = Movie.objects.filter(name__icontains=search_text).exclude(
+        name__in = usermovies.values_list('name', flat=True)
+    )[:5]
+
+    
+
+    context = {
+        'results': results
+    }
+    return render(request, 'partials/search_result.html', context)
